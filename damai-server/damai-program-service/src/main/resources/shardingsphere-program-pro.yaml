@@ -127,9 +127,11 @@ rules:
         type: INLINE
         props:
           algorithm-expression: ds_${Math.abs(create_time.hashCode()) % 2}
+          allow-range-query-with-inline-sharding: true
       tableProgramRecordTaskModModel:
         type: INLINE
         props:
-          algorithm-expression: d_program_record_task_${(Math.abs(create_time.hashCode()).intdiv(2)) % 2}    
+          algorithm-expression: d_program_record_task_${(Math.abs(create_time.hashCode()).intdiv(2)) % 2}
+          allow-range-query-with-inline-sharding: true
 props:
   sql-show: true

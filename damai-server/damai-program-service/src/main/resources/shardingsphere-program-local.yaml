@@ -185,11 +185,13 @@ rules:
         type: INLINE
         props:
           algorithm-expression: ds_${Math.abs(create_time.hashCode()) % 2}
+          allow-range-query-with-inline-sharding: true
       # d_program_record_task表分表算法 - 使用create_time的hashCode次低位(bit1)
       tableProgramRecordTaskModModel:
         type: INLINE
         props:
           algorithm-expression: d_program_record_task_${(Math.abs(create_time.hashCode()).intdiv(2)) % 2}
+          allow-range-query-with-inline-sharding: true
 props:
   # 打印真实sql
   sql-show: true
