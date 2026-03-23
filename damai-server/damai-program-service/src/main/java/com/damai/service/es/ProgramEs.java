@@ -260,7 +260,7 @@ public class ProgramEs {
             pageInfo.setPageSize(programSearchDto.getPageSize());
             businessEsHandle.executeQuery(SpringUtil.getPrefixDistinctionName() + "-" + ProgramDocumentParamName.INDEX_NAME,
                     ProgramDocumentParamName.INDEX_TYPE,list,pageInfo,ProgramListVo.class,
-                    searchSourceBuilder,null);
+                    searchSourceBuilder,Arrays.asList(ProgramDocumentParamName.TITLE,ProgramDocumentParamName.ACTOR));
             pageVo = PageUtil.convertPage(pageInfo,programListVo -> programListVo);
         }catch (Exception e) {
             log.error("search error",e);
