@@ -39,8 +39,12 @@ public class ProgramShowTimeRenewal extends AbstractApplicationPostConstructHand
         Set<Long> programIdSet = programShowTimeService.renewal();
         if (!programIdSet.isEmpty()) {
             //如果更新了，将elasticsearch的整个索引和数据都删除
-            businessEsHandle.deleteIndex(SpringUtil.getPrefixDistinctionName() + "-" +
-                    ProgramDocumentParamName.INDEX_NAME);
+            boolean result = businessEsHandle.checkIndex(SpringUtil.getPrefixDistinctionName() + "-" +
+                    ProgramDocumentParamName.INDEX_NAME, ProgramDocumentParamName.INDEX_TYPE);
+            if (result) {
+                businessEsHandle.deleteIndex(SpringUtil.getPrefixDistinctionName() + "-" +
+                        ProgramDocumentParamName.INDEX_NAME);
+            }
             for (Long programId : programIdSet) {
                 //将redis中的数据也删除
                 programService.delRedisData(programId);
