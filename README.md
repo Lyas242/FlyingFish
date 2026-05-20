@@ -1,125 +1,165 @@
-# ©️版权告示
-为了保障星球用户权益，大麦pro 不再实行开源策略，而是通过邀请星球用户进入私有项目进行学习。
-严禁未经本项目原作者明确书面授权擅自分享至 GitHub、Gitee 等任何开放平台。违者将面临版权法律追究。
+# 🎫 FlyingFish-Pro
 
-- **知识星球:** [《侵权责任法》、《著作权法》和《信息网络传播权保护条例》。](https://support.zsxq.com/guidance.html)
-- **项目版权:**[《中华人民共和国著作权法实施条例》。](https://gitcode.com/java_up/introduce/blob/main/copyright_%E4%B8%AD%E5%8D%8E%E4%BA%BA%E6%B0%91%E5%85%B1%E5%92%8C%E5%9B%BD%E8%91%97%E4%BD%9C%E6%9D%83%E6%B3%95%E5%AE%9E%E6%96%BD%E6%9D%A1%E4%BE%8B.pdf)
+FlyingFish-Pro 是一个基于 Spring Cloud Alibaba 微服务架构的高并发在线售票系统，模拟大麦网核心业务场景。项目涵盖了从用户注册登录、节目管理、库存扣减、订单生成、支付结算到后台管理的完整业务流程，并针对高并发场景下的各类疑难问题提供了生产级落地方案。
 
-## 大麦pro版本震撼来袭
+## 🏗️ 技术栈
 
-我们都知道想进大厂难度确实比较高，有些小伙伴去面试虽然是实习生岗位，但依然会问你很刁钻的问题，来考验你的技术能力到底如何？
+| 类别 | 技术 |
+|------|------|
+| **语言** | Java 17 |
+| **核心框架** | Spring Boot 3.3.0、Spring Cloud 2023.0.2、Spring Cloud Alibaba 2023.0.1.0 |
+| **ORM / 分库分表** | MyBatis-Plus 3.5.7、Apache ShardingSphere 5.3.2 |
+| **数据库连接池** | Druid 1.1.10 |
+| **消息队列** | Apache Kafka |
+| **缓存 / 分布式协调** | Redis (Jedis)、Redisson 3.32.0 |
+| **注册中心 / 配置中心** | Nacos 2.0.3 |
+| **流量控制 / 熔断降级** | Sentinel、Hystrix |
+| **分布式事务** | Seata (AT 模式) |
+| **搜索引擎** | Elasticsearch |
+| **API 网关** | Spring Cloud Gateway |
+| **安全认证** | Sa-Token 1.43.0、Jasypt 加密 |
+| **接口文档** | Knife4j 4.3.0 (OpenAPI 3.0) |
+| **可观测性** | SkyWalking 9.4.0、Prometheus、Spring Boot Actuator |
+| **验证码** | AJ Captcha |
+| **前端** | Vue 3 + Element Plus + Vite + Pinia |
+| **构建工具** | Maven |
 
-而我辅导的小伙伴就有不少人问到了架构方面的问题，就比如在项目的运行时，就会被问到：
+## 📐 项目架构
 
-- **Redis宕机了怎么办？**
+```
+FlyingFish-Pro
+├── damai-common                          # 公共模块（枚举、常量、异常、工具类、JWT、ThreadLocal）
+├── damai-redis-tool-framework            # Redis 工具框架（缓存、Stream 消息流）
+├── damai-elasticsearch-framework         # Elasticsearch 工具框架
+├── damai-id-generator-framework          # 分布式 ID 生成器（雪花算法）
+├── damai-redisson-framework              # Redisson 框架（分布式锁、布隆过滤器、限流、延迟队列）
+├── damai-thread-pool-framework           # 线程池框架
+├── damai-captcha-manage-framework        # 验证码管理框架
+├── damai-spring-cloud-framework          # Spring Cloud 公共服务框架（分片算法、灰度路由）
+├── damai-server-client                   # Feign 远程调用客户端集合
+│   ├── damai-user-client                 # 用户服务客户端
+│   ├── damai-order-client                # 订单服务客户端
+│   ├── damai-pay-client                  # 支付服务客户端
+│   ├── damai-program-client              # 节目服务客户端
+│   ├── damai-base-data-client            # 基础数据服务客户端
+│   └── damai-customize-client            # 压测服务客户端
+├── damai-server                          # 微服务模块集合
+│   ├── damai-gateway-service             # API 网关服务（路由转发、限流、Kafka 数据采集）
+│   ├── damai-user-service                # 用户服务（注册、登录、布隆过滤器去重）
+│   ├── damai-program-service             # 节目服务（节目/座位/库存管理，v1/v2 版本）
+│   ├── damai-order-service               # 订单服务（高并发下单 v1~v4，延迟队列，分布式事务）
+│   ├── damai-pay-service                 # 支付服务（支付宝对接，订单结算）
+│   ├── damai-base-data-service           # 基础数据服务（字典/区域等参考数据）
+│   ├── damai-customize-service           # 动态压测服务
+│   ├── damai-admin-service               # 后台管理服务（监控、查询、数据处理）
+│   ├── damai-mybatis-plus-service        # 代码生成器服务
+│   └── damai-migrate-service             # 数据迁移服务
+├── sql/cloud/                            # 数据库初始化 SQL 脚本（分库分表结构）
+└── vue3/                                 # 前端项目（Vue 3 + Element Plus）
+```
 
-- **MQ宕机了怎么办？**
+### 🎯 分库分表方案
 
-- **MQ消息丢失了怎么办？**
+- **基因法均匀分布**：分库使用中高位 bit，分表使用低位 bit，两者独立分布，资源利用率从 50% 提升到 100%
+- **虚拟分片路由扩容**：引入虚拟分片层（8 物理分片 → 1024 虚拟分片），支持分批平滑迁移、秒级切换和快速回滚
 
-- **MQ消息延迟消费了怎么办？**
+### 🔬 动态压测
 
-- **数据库的余票数量和Redis中的不一致怎么办？**
+内置动态压测功能，可对不同版本接口进行实时压测对比，直观展示各版本优化效果。
 
-- **Redis恢复后，丢失的数据要怎么恢复？**
+### 🖥️ 后台管理系统
 
-等等一系列的这种令人头疼的问题！之前的 damai 项目关于这方面的问题有做过处理，但有些是人工处理，没有实现全面的自动化，有的面试官听着感觉比较普通，没有给人十足的亮点。
+实时的监控与查询面板，支持：
+- 余票数量、座位状态、订单状态实时监控
+- Redis 与数据库数据一致性校验
+- Redis 扣减余票日志、MQ 消息收发日志
+- 问题排查与时间线追溯
 
-所以针对上述说的这种疑难杂症，特意开发出了 damai 项目的升级版本：<font size="5" color="#5575f6"> **damai_pro** </font>
+## 🚀 快速开始
 
-# 一、大麦pro介绍
+### 环境要求
 
-damai_pro 是在原有的 damai 项目做了一次重大的升级！不仅保留了原有的功能，而且在此基础上添加了很多新的解决方案。
+- JDK 17+
+- Maven 3.8+
+- MySQL 8.0+
+- Redis 6.0+
+- Kafka 3.0+
+- Nacos 2.0.3
+- Elasticsearch 7.x+
+- Node.js 16+ (前端)
 
-**甭管是Redis宕机了、Redis和数据库不一致了、Redis恢复丢失的数据了、MQ宕机了、MQ数据丢失了，等等。。。**
+### 1. 克隆项目
 
-**这些所有的问题全部在damai_pro版本中得到解决！**
+```bash
+git clone https://github.com/YOUR_USERNAME/FlyingFish-Pro.git
+cd FlyingFish-Pro
+```
 
-**都是真实生产环境使用的实际落地解决方案，完完全全经得起考证**
+### 2. 初始化数据库
 
-为的就是让小伙伴去面试时，能做到无论面试问什么，问的多么的抠细节，用 damai_pro 项目全都能回答上来！
+执行 `sql/cloud/` 目录下的 SQL 脚本，创建分库分表结构：
 
-![](https://multimedia-javaup.cn/%E5%A4%A7%E9%BA%A6pro/%E6%9E%B6%E6%9E%84%E9%9A%BE%E7%82%B9%E9%97%AE%E9%A2%98%E8%A7%A3%E5%86%B3.png)
+```bash
+# 按顺序执行
+mysql -u root -p < sql/cloud/1_damai_cloud_create_database.sql
+mysql -u root -p < sql/cloud/damai_user_0.sql
+mysql -u root -p < sql/cloud/damai_user_1.sql
+mysql -u root -p < sql/cloud/damai_order_0.sql
+mysql -u root -p < sql/cloud/damai_order_1.sql
+mysql -u root -p < sql/cloud/damai_program_0.sql
+mysql -u root -p < sql/cloud/damai_program_1.sql
+mysql -u root -p < sql/cloud/damai_pay_0.sql
+mysql -u root -p < sql/cloud/damai_pay_1.sql
+mysql -u root -p < sql/cloud/damai_base_data.sql
+mysql -u root -p < sql/cloud/damai_customize.sql
+```
 
-# 二、大麦pro细节的优化
-damai_pro 除了解决上述提到的各种中间件宕机和数据库丢失的问题外，还对原有的逻辑进一步做了优化，将逻辑进行再次解耦，学习起来更加的清晰！
+### 3. 启动基础设施
 
-并且在数据方面也升级了可靠性，做到 **应该高可用的业务，那就高可用。应该强一致性的业务，那就强一致性。** 解决之前数据在极端的情况下可能会丢失的问题。
+确保以下服务已启动：
 
-![](https://multimedia-javaup.cn/%E5%A4%A7%E9%BA%A6pro/%E5%AF%B9%E8%B4%A6.png)
+- Nacos：`127.0.0.1:8848`
+- Redis：`127.0.0.1:6379`
+- Kafka：`127.0.0.1:9092`
+- Elasticsearch：`127.0.0.1:9200`
 
-# 三、大麦pro的动态压测
+### 4. 编译构建
 
-对于高并发项目来说，**压测** 是必不可少的一个环节，只有通过压测，才能知道系统的瓶颈在哪里，才能知道系统能承受多大的压力。
+```bash
+mvn clean install -Dmaven.test.skip=true
+```
 
-而且通过压测还可以知道系统在不同的参数下，**性能提升了多少，能承受多大的压力**。
+### 5. 启动微服务
 
-所以对于大麦pro项目来说，特意开发了 **动态压测** 的功能，来模拟生产中的实际业务场景。
+推荐按以下顺序启动各个服务：
 
-大麦pro的节目详情有 **v1**、**v2** 两个版本，生成订单有 **v1**、**v2**、**v3**、**v4** 四个版本，所以对于这些不同的版本，都需要进行压测，来对比不同版本下的性能提升。
+1. `damai-gateway-service` — 网关服务
+2. `damai-user-service` — 用户服务
+3. `damai-base-data-service` — 基础数据服务
+4. `damai-program-service` — 节目服务
+5. `damai-order-service` — 订单服务
+6. `damai-pay-service` — 支付服务
+7. `damai-admin-service` — 后台管理服务
+8. `damai-customize-service` — 压测服务
 
+每个服务在各自 `application.yml` 中通过 `spring.profiles.active` 切换 `local` / `pro` 环境。
 
-# 四、大麦pro的后台管理
+### 6. 启动前端
 
-## 重要性功能的完善
-除了能解决上述的疑难杂症之外，还需要很多重要性的功能：
+```bash
+cd vue3
+npm install
+npm run dev
+```
 
-- 需要能实时的监控和查询关键数据，例如：余票数量、座位状态、订单状态，以及数据库中和Redis是否一致等。
+## 📖 接口文档
 
-- 对于关键性的操作，比如Redis扣减余票，MQ消息队列的发送和消费，也都要记录下来，方便后续排查问题。
+启动网关服务后，访问 Knife4j 聚合文档：
 
-- 以及问题出现后，不能说解决完就完事了，还要知道问题出现的原因是什么？问题出现的时间是什么时候？
+```
+http://localhost:8080/doc.html
+```
 
-为此，专门开发了一个后台管理系统，来对这些问题进行实时的监控、查询、处理。
+## 📄 License
 
-## 后台管理系统详细介绍
-
-[👉 点击这里查看大麦pro后台管理系统的详细介绍](https://articles.zsxq.com/id_ug7spmc5hgjs.html)
-
-# 五、大麦pro分库分表的升级
-## 基因法如何在分库分表下数据均匀分布
-在分库分表场景中，原始算法存在严重的资源浪费问题：由于分库和分表使用了相同的"基因位"（ID的同一部分），导致8个物理表中约有4个表很少被使用，资源利用率仅约50%。
-
-大麦pro通过基因位分离方案完美解决了这个问题：
-
-✅ 分表：使用分片键的低位bit（最右边的几位）
-✅ 分库：使用分片键的中高位bit（跳过表基因位后的几位）
-✅ 两者使用的bit位完全不重叠，实现独立分布
-✅ 在订单号生成时嵌入用户ID的基因，保证无论使用订单号还是用户ID查询，都能100%定位到同一个分片
-这样做的好处是：将资源利用率从50%提升到100%，并且保证了查询的一致性。
-
-[👉 点击这里查看基因法如何在分库分表下数据均匀分布的详细介绍](https://javaup.chat/damai/damai-pro/sharding/virtual/introduce)
-
-## 分库分表下数据如何扩容
-传统的基因法虽然解决了数据均匀分布问题，但有个致命缺陷：扩容困难。由于订单号中已经硬编码了固定的库表基因，当业务增长需要扩容时，原有订单号中的路由信息就会失效。
-
-大麦pro通过引入虚拟分片路由方案优雅地解决了这个问题：
-
-核心思想：在物理分片和数据之间增加一层虚拟分片映射
-
-数据 → 虚拟分片ID → 路由表 → 物理库表
-
-关键优势：
-
-✅ 将8个物理分片"细分"为1024个虚拟分片，扩容粒度从12.5%降低到约0.1%
-✅ 扩容时只需调整虚拟分片到物理分片的映射关系，不需要改变订单号生成逻辑
-✅ 支持分批迁移，可以分24次迁移，每次只迁移约2.1%的数据，大大降低风险
-✅ 支持秒级切换和快速回滚，业务无感知
-这样就真正做到了一次设计，持续扩容，彻底解决了分库分表扩容的难题。
-
-[👉 点击这里查看虚拟分片路由的详细介绍](https://javaup.chat/damai/damai-pro/sharding/virtual/introduce)
-
-# 六、大麦pro项目的总结
-
-到此，大麦pro可以说是一个非常完整的高并发项目了，不管从项目架构设计、高并发业务设计、高并发问题解决、数据一致性问题、实时监控查询、业务的详细压测
-，等等。全部都做了非常完善的处理。
-
-可以说全网能达到这种完善程度的项目真的是寥寥无几，拿这个去提高技术和面试，绝对是没得说！
-
-# 七、大麦pro项目的申请
-
-damai_pro项目是本人花费了很多的精力才开发出来的，同时也为了更好的保护已经加入星球的小伙伴的权益。所以决定damai_pro项目不再进行开源，而是将项目放到了私有库中。
-
-普通版本的damai项目依然还是正常开源，本人也依然会继续进行优化。开源地址为： [👉 点击这里跳转到damai项目](https://gitee.com/java-up-up/damai)
-
-已经加入星球的小伙伴，可以按照以下指示来申请和学习damai_pro项目：[👉 点击这里学习damai_pro项目](https://articles.zsxq.com/id_m4d7ni4zwkbq.html)
+Copyright © 2024. All rights reserved.
