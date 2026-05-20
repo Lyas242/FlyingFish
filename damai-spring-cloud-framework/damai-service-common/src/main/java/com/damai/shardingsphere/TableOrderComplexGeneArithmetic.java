@@ -70,27 +70,31 @@ public class TableOrderComplexGeneArithmetic implements ComplexKeysShardingAlgor
         Map<String, Collection<Long>> columnNameAndShardingValuesMap = complexKeysShardingValue.getColumnNameAndShardingValuesMap();
         //如果没有条件查询，那么就查所有的分表
         if (CollectionUtil.isEmpty(columnNameAndShardingValuesMap)) {
-            return actualTableNames;
+            return allActualSplitTableNames;
         }
         //order_number条件的值
         Collection<Long> orderNumberValues = columnNameAndShardingValuesMap.get("order_number");
         //user_id条件的值
         Collection<Long> userIdValues = columnNameAndShardingValuesMap.get("user_id");
         
-        //分片键的值
-        Long value = null;
-        //如果是order_number查询
+        //处理order_number的多个值（IN查询）
         if (CollectionUtil.isNotEmpty(orderNumberValues)) {
-            value = orderNumberValues.stream().findFirst().orElseThrow(() -> new DaMaiFrameException(BaseCode.ORDER_NUMBER_NOT_EXIST));
-            //如果是user_id查询
-        } else if (CollectionUtil.isNotEmpty(userIdValues)) {
-            value = userIdValues.stream().findFirst().orElseThrow(() -> new DaMaiFrameException(BaseCode.USER_ID_NOT_EXIST));
+            for (Long orderNumber : orderNumberValues) {
+                //计算每个order_number路由到的表
+                String tableName = logicTableName + "_" + ((shardingCount - 1) & orderNumber);
+                actualTableNames.add(tableName);
+            }
+            return actualTableNames.stream().distinct().collect(java.util.stream.Collectors.toList());
         }
-        //如果order_number或者user_id的值存在
-        if (Objects.nonNull(value)) {
-            //表索引 = 分片键的低N位（N = log2(表数量)）
-            actualTableNames.add(logicTableName + "_" + ((shardingCount - 1) & value));
-            return actualTableNames;
+        
+        //处理user_id的多个值（IN查询）
+        if (CollectionUtil.isNotEmpty(userIdValues)) {
+            for (Long userId : userIdValues) {
+                //计算每个user_id路由到的表
+                String tableName = logicTableName + "_" + ((shardingCount - 1) & userId);
+                actualTableNames.add(tableName);
+            }
+            return actualTableNames.stream().distinct().collect(java.util.stream.Collectors.toList());
         }
         //如果没有分片键查询，则把所有真实表返回
         return allActualSplitTableNames;
