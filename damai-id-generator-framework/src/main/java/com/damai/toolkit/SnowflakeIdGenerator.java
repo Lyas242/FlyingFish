@@ -219,7 +219,7 @@ public class SnowflakeIdGenerator {
         
         // 固定预留6位基因位，支持未来扩容
         // 6位 = 可支持最大 2^6 = 64 种分片组合（8库8表）
-        long fixedGeneLength = 6L;
+        long fixedGeneLength = 3L;
         
         // 创建基因掩码：0b111111 (6个1)
         long geneMask = (1L << fixedGeneLength) - 1;
