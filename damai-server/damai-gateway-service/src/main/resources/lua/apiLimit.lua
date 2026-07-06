@@ -29,9 +29,6 @@ if ((count - rule_threshold) >= 0) then
     trigger_result = 1
 end
 
-if (redis.call('exists', rule_limit_key) == 1) then
-    trigger_result = 1
-end
 api_count = count
 threshold = rule_threshold
 
@@ -69,12 +66,6 @@ if (api_rule_type == 2) then
                     return string.format('{"triggerResult": %d, "triggerCallStat": %d, "apiCount": %d, "threshold": %d, "messageIndex": %d}'
                     ,trigger_result,trigger_call_Stat,api_count,threshold,message_index)
                 end
-            end
-            if (redis.call('exists', depth_rule_limit_key) == 1) then
-                trigger_result = 1
-                message_index = index
-                return string.format('{"triggerResult": %d, "triggerCallStat": %d, "apiCount": %d, "threshold": %d, "messageIndex": %d}'
-                ,trigger_result,trigger_call_Stat,api_count,threshold,message_index)
             end
         end
     end
