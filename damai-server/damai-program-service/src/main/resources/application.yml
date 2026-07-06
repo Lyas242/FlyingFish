@@ -66,6 +66,7 @@ spring:
       stream:
         streamName: invalid_program
         consumerType: broadcast
+      password: 1234
   cloud:
     nacos:
       discovery:
@@ -136,7 +137,7 @@ jasypt:
 elasticsearch:
   ip: 127.0.0.1:9200
   userName: elastic
-  passWord: elastic
+  passWord: 123456
 delay:
   queue:
     corePoolSize: 8                     # 核心线程数(提升并发处理能力)
